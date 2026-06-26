@@ -139,7 +139,7 @@ pub static BASETYPE_DECODERS: phf::Map<&'static str, Decoder> = phf_map! {
 };
 
 pub fn demo_cmd_type_from_int(value: i32) -> Result<EDemoCommands, DemoParserError> {
-    EDemoCommands::try_from(value).map_err(|_| DemoParserError::UnknownDemoCmd(value))
+    EDemoCommands::try_from(value).or(Ok(EDemoCommands::DemMax))
 }
 
 pub static BASETYPE_DECODERS2: phf::Map<&'static str, Decoder> = phf_map! {

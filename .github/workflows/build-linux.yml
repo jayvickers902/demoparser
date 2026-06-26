@@ -1,0 +1,50 @@
+name: Build Linux binary
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  build-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-unknown-linux-gnu
+
+      - name: Install node deps
+        working-directory: src/node
+        run: npm install
+
+      - name: Build linux-x64-gnu
+        working-directory: src/node
+        run: npx napi build --platform --release --target x86_64-unknown-linux-gnu
+
+      - name: List built files
+        working-directory: src/node
+        run: ls -la *.node || true
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: demoparser2-linux-x64-gnu
+          path: src/node/demoparser2.linux-x64-gnu.node
+          if-no-files-found: error
+
+      - name: Create or update release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="patched-faceit"
+          gh release delete "$TAG" --yes 2>/dev/null || true
+          gh release create "$TAG" \
+            --title "Patched: skip unknown FACEIT demo commands" \
+            --notes "Maps unknown EDemoCommands to DemMax instead of throwing UnknownDemoCmd. Fixes FACEIT demo parsing." \
+            src/node/demoparser2.linux-x64-gnu.node
